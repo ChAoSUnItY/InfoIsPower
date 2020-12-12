@@ -7,7 +7,7 @@
   "info_is_power.overlay.pos" : "位置 : %d , %d , %d",
   "info_is_power.overlay.playerList" : "玩家列表 :",
   "info_is_power.overlay.honeyLevel" : "蜂蜜等級 : %d/5 ",
-  "info_is_power.overlay.bees" : " 蜜蜂 : %d/3",
+  "info_is_power.overlay.bees" : "蜜蜂 : %d/3",
   "info_is_power.overlay.normalTotal" : "共有 %d 標誌",
   "info_is_power.overlay.explorerPos" : "目標位置(x , z) : %d , %d",
   "info_is_power.overlay.durability" : "耐久值 : %d/%d"

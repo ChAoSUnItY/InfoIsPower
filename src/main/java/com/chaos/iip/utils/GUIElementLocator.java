@@ -49,16 +49,7 @@ public class GUIElementLocator {
     }
 
     public int getNextLocation(LocatorGapTypes type) {
-        switch (type) {
-            case TEXT:
-                this.counter += 9;
-                break;
-            case ITEM:
-                this.counter += 20;
-                break;
-            default:
-                break;
-        }
+        this.counter += type.size;
         return this.counter;
     }
 
@@ -67,15 +58,7 @@ public class GUIElementLocator {
     }
 
     public void returnCounter(int times, LocatorGapTypes type) {
-        switch (type) {
-            case TEXT:
-                this.counter -= times * 9;
-                break;
-            case ITEM:
-                this.counter -= times * 20;
-            default:
-                break;
-        }
+        this.counter -= times * type.size;
     }
 
     /***
@@ -84,10 +67,16 @@ public class GUIElementLocator {
      *
      */
     public enum LocatorTypes {
-        LEFT_UP, LEFT_CENTER, LEFT_DOWN;
+        LEFT_UP, LEFT_CENTER, LEFT_DOWN
     }
 
     public enum LocatorGapTypes {
-        ITEM, TEXT;
+        ITEM(20), TEXT(9), TOOLTIP_TEXT(10);
+
+        int size;
+
+        LocatorGapTypes(int size) {
+            this.size = size;
+        }
     }
 }
