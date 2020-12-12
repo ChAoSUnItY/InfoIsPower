@@ -1,0 +1,13 @@
+modLoader = "javafml"
+loaderVersion = "[28,)"
+license="MIT"
+[[mods]]
+modId = "info_is_power"
+version = "${file.jarVersion}"
+displayName = "Info Is Power" #mandatory
+#displayURL="http://example.com/"
+#logoFile="com.chaos.iip.png"
+authors="ChAoS_UnItY"
+description = '''
+
+'''
