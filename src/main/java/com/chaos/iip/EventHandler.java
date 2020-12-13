@@ -4,18 +4,14 @@ import com.chaos.iip.utils.GUIElementLocator;
 import com.chaos.iip.utils.Translatable;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import net.minecraft.block.BeehiveBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.ShulkerBoxBlock;
+import net.minecraft.block.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.ItemRenderer;
 import net.minecraft.client.util.ITooltipFlag.TooltipFlags;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.EquipmentSlotType;
 import net.minecraft.item.*;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.nbt.ListNBT;
@@ -33,7 +29,9 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = InfoIsPower.MODID, value = Dist.CLIENT)
 public class EventHandler {
@@ -46,51 +44,68 @@ public class EventHandler {
         World world = mc.getConnection().getWorld();
         FontRenderer font = mc.fontRenderer;
         GUIElementLocator locator = GUIElementLocator.getInstance();
-        DecimalFormat df = new DecimalFormat("0.00");
-        int fps = 0;
-        try {
-            fps = ObfuscationReflectionHelper.findField(Minecraft.class, "field_71470_ab").getInt(mc);
-        } catch (SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
         PlayerEntity player = mc.player;
         BlockPos pos = player.getPosition();
+
+        // Main Render
         if (!mc.gameSettings.showDebugInfo) {
-            // ============================BASE MESSAGES PART============================//
-            simpleStringDraw(matrix, font, new Translatable("fps", null, fps).getString(), 2, locator.begin(GUIElementLocator.LocatorTypes.LEFT_UP, mc).getCurrent(), color);
-            simpleStringDraw(matrix, font, new Translatable("biome", null, new TranslationTextComponent(Util.makeTranslationKey("biome", world.getBiome(pos).getRegistryName())).getString()).getString(), 2, locator
-                    .getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
-            if (!player.isCreative()) {
-                simpleStringDraw(matrix, font, new Translatable("health", null, df.format(player.getHealth()))
-                        .getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), (player.getHealth() > 10.0 ? TextFormatting.GREEN : (player.getHealth() > 5.0 ? TextFormatting.YELLOW : TextFormatting.RED)).getColor());
-                simpleStringDraw(matrix, font, new Translatable("hunger", null, player.getFoodStats().getFoodLevel(), df.format(player.getFoodStats().getSaturationLevel()))
-                        .getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), TextFormatting.GOLD.getColor());
-                simpleStringDraw(matrix, font, new Translatable("armor", null, player.getTotalArmorValue()).getString(), 2, locator
-                        .getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), TextFormatting.GRAY.getColor());
+            // FPS and biome
+            if (shouldRender("FPS")) {
+                int fps = 0;
+                try {
+                    fps = ObfuscationReflectionHelper.findField(Minecraft.class, "field_71470_ab").getInt(mc);
+                } catch (SecurityException | IllegalArgumentException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+                simpleStringDraw(matrix, font, new Translatable("fps", null, fps).getString(), 2, locator.begin(GUIElementLocator.LocatorTypes.LEFT_UP, mc).getCurrent(), color);
             }
-            // ============================POS & PLAYERS PART============================//
-            simpleStringDraw(matrix, font, new Translatable("pos", null, pos.getX(), pos.getY(), pos.getZ()).getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
-            // ============================HELD ITEM PART============================//
-            if (mc.isChatEnabled()) {
-                locator.begin(GUIElementLocator.LocatorTypes.LEFT_CENTER, mc);
-                EquipmentSlotType[] types = EquipmentSlotType.values();
-                Iterator<EquipmentSlotType> handType = Arrays.asList(new EquipmentSlotType[]{types[0], types[1]}).iterator();
-                Iterator<EquipmentSlotType> armorType = Arrays.asList(new EquipmentSlotType[]{types[5], types[4], types[3], types[2]}).iterator();
-                switch (Config.CLIENT.mode.get()) {
-                    case 1:
+
+            if (shouldRender("Biome"))
+                simpleStringDraw(matrix, font, new Translatable("biome", null, new TranslationTextComponent(Util.makeTranslationKey("biome", world.getBiome(pos).getRegistryName())).getString()).getString(), 2, locator
+                        .getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
+            // Survival mode only stats, like health, hunger, and armor
+            if (!player.isCreative()) {
+                if (shouldRender("Health")) {
+                    DecimalFormat df = new DecimalFormat("0.00");
+                    simpleStringDraw(matrix, font, new Translatable("health", null, df.format(player.getHealth()))
+                            .getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), (player.getHealth() > 10.0 ? TextFormatting.GREEN : (player.getHealth() > 5.0 ? TextFormatting.YELLOW : TextFormatting.RED)).getColor());
+                }
+
+                if (shouldRender("Hunger")) {
+                    DecimalFormat df = new DecimalFormat("0.00");
+                    simpleStringDraw(matrix, font, new Translatable("hunger", null, player.getFoodStats().getFoodLevel(), df.format(player.getFoodStats().getSaturationLevel()))
+                            .getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), TextFormatting.GOLD.getColor());
+                }
+
+                if (shouldRender("Armor"))
+                    simpleStringDraw(matrix, font, new Translatable("armor", null, player.getTotalArmorValue()).getString(), 2, locator
+                            .getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), TextFormatting.GRAY.getColor());
+            }
+
+            if (shouldRender("Position"))
+                simpleStringDraw(matrix, font, new Translatable("pos", null, pos.getX(), pos.getY(), pos.getZ()).getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
+
+            // Held items and equipments
+            locator.begin(GUIElementLocator.LocatorTypes.LEFT_CENTER, mc);
+            switch (Config.CLIENT.mode.get()) {
+                case 1:
+                    if (shouldRender("Equipment")) {
                         (Lists.reverse((List<ItemStack>) player.getArmorInventoryList())).forEach(stack -> {
                             if (!stack.isEmpty())
                                 getAllInfos(matrix, mc, stack, locator, true);
                         });
                         locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM);
+                    }
+                    if (shouldRender("HeldItems"))
                         player.getHeldEquipment().forEach(stack -> {
                             if (stack.isEmpty())
                                 return;
                             getAllInfos(matrix, mc, stack, locator, false);
                             locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM);
                         });
-                        break;
-                    case 2:
+                    break;
+                case 2:
+                    if (shouldRender("Equipment")) {
                         (Lists.reverse((List<ItemStack>) player.getArmorInventoryList())).forEach(stack -> {
                             if (stack.isEmpty())
                                 return;
@@ -98,17 +113,18 @@ public class EventHandler {
                             locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM);
                         });
                         locator.returnCounter(1, GUIElementLocator.LocatorGapTypes.ITEM);
+                    }
+                    if (shouldRender("HeldItems"))
                         player.getHeldEquipment().forEach(stack -> {
                             if (!stack.isEmpty())
                                 getAllInfos(matrix, mc, stack, locator, true);
                         });
-                        break;
-                    default:
-                        break;
-                }
+                    break;
+                default:
+                    break;
             }
-            locator.end();
         }
+        locator.end();
     }
 
     private static void simpleStringDraw(MatrixStack matrix, FontRenderer font, String text, int x, int y, int color) {
@@ -146,7 +162,7 @@ public class EventHandler {
                 int infos[] = {tag.getCompound("BlockStateTag").getInt("honey_level"), tag.getCompound("BlockEntityTag").getList("Bees", 10).size()};
                 texts.add(new Translatable("honeyLevel", null, infos[0]).mergeStyle(infos[0] == 5 ? TextFormatting.GOLD : TextFormatting.GREEN));
                 texts.add(new Translatable("bees", null, infos[1]).mergeStyle(infos[1] == 3 ? TextFormatting.GOLD : TextFormatting.GREEN));
-            } else if (blk instanceof ShulkerBoxBlock) {
+            } else if (blk instanceof ShulkerBoxBlock || blk instanceof ChestBlock || blk instanceof BarrelBlock || blk instanceof FurnaceBlock || blk instanceof SmokerBlock) {
                 ListNBT list = tag.getCompound("BlockEntityTag").getList("Items", 10);
                 simpleItemDraw(font, renderer, stack, 2, locator.getCurrent());
                 simpleStringDraw(matrix, font, s, 20, locator.getCurrent(), stack.getRarity().color.getColor());
@@ -213,5 +229,9 @@ public class EventHandler {
             return TextFormatting.DARK_RED;
         else
             return TextFormatting.GRAY;
+    }
+
+    private boolean shouldRender(String s) {
+        return Config.shouldRender(s);
     }
 }

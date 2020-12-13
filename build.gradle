@@ -11,9 +11,9 @@ buildscript {
 
 apply plugin: 'net.minecraftforge.gradle'
 
-group = 'InfoIsPower'
+group = 'com.chaos.iip'
 version = '2.0.0'
-archivesBaseName = 'com.chaos.iip'
+archivesBaseName = 'InfoIsPower'
 
 sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
