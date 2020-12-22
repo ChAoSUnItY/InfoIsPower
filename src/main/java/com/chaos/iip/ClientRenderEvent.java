@@ -37,6 +37,9 @@ public class ClientRenderEvent {
 
     @SubscribeEvent
     public void onRender(RenderGameOverlayEvent.Text event) {
+        if (!Config.CLIENT.enableRender.get())
+            return;
+
         MatrixStack matrix = event.getMatrixStack();
         Minecraft mc = Minecraft.getInstance();
         World world = mc.getConnection().getWorld();

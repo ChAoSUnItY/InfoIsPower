@@ -14,6 +14,8 @@ public class Config {
     public static class Client {
         public static final List<String> acceptableRenderValues = Lists.newArrayList("FPS", "Biome", "Health", "Hunger", "Armor", "Position", "Equipment", "HeldItems");
 
+        public final ForgeConfigSpec.BooleanValue enableRender;
+
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> renderModes;
         public final ForgeConfigSpec.EnumValue<RenderLocationType> renderType;
         public final ForgeConfigSpec.IntValue mode;
@@ -29,6 +31,9 @@ public class Config {
 
             renderType = builder.comment("This enumeration defines where the info will be render.\nAcceptable Values: LEFT, RIGHT")
                     .defineEnum("Render Type", RenderLocationType.LEFT);
+
+            enableRender = builder.comment("This decides should enable this mode's feature. You should disable this while playing on highly game-experience-modified server such as Hypixel or you'll experience random crash.")
+                    .define("Enable Render", true);
 
             builder.pop();
         }
