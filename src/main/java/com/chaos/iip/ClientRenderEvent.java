@@ -1,6 +1,8 @@
 package com.chaos.iip;
 
+import com.chaos.iip.utils.DisplayContentHelper;
 import com.chaos.iip.utils.GUIElementLocator;
+import com.chaos.iip.utils.RenderLocationType;
 import com.chaos.iip.utils.Translatable;
 import com.google.common.collect.Lists;
 import com.mojang.blaze3d.matrix.MatrixStack;
@@ -8,8 +10,6 @@ import net.minecraft.block.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.ItemRenderer;
-import net.minecraft.client.util.ITooltipFlag.TooltipFlags;
-import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
@@ -29,12 +29,10 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Mod.EventBusSubscriber(modid = InfoIsPower.MODID, value = Dist.CLIENT)
-public class EventHandler {
+public class ClientRenderEvent {
     private static final int color = 16777215;
 
     @SubscribeEvent
@@ -57,33 +55,34 @@ public class EventHandler {
                 } catch (SecurityException | IllegalArgumentException | IllegalAccessException e) {
                     e.printStackTrace();
                 }
-                simpleStringDraw(matrix, font, new Translatable("fps", null, fps).getString(), 2, locator.begin(GUIElementLocator.LocatorTypes.LEFT_UP, mc).getCurrent(), color);
+                drawString(matrix, font, new Translatable("fps", null, fps).getString(), 2, locator.begin(GUIElementLocator.LocatorTypes.LEFT_UP, mc).getCurrent(), color);
             }
 
             if (shouldRender("Biome"))
-                simpleStringDraw(matrix, font, new Translatable("biome", null, new TranslationTextComponent(Util.makeTranslationKey("biome", world.getBiome(pos).getRegistryName())).getString()).getString(), 2, locator
+                drawString(matrix, font, new Translatable("biome", null, new TranslationTextComponent(Util.makeTranslationKey("biome", world.getBiome(pos).getRegistryName())).getString()).getString(), 2, locator
                         .getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
+
             // Survival mode only stats, like health, hunger, and armor
             if (!player.isCreative()) {
                 if (shouldRender("Health")) {
                     DecimalFormat df = new DecimalFormat("0.00");
-                    simpleStringDraw(matrix, font, new Translatable("health", null, df.format(player.getHealth()))
+                    drawString(matrix, font, new Translatable("health", null, df.format(player.getHealth())).appendString(" / " + player.getMaxHealth())
                             .getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), (player.getHealth() > 10.0 ? TextFormatting.GREEN : (player.getHealth() > 5.0 ? TextFormatting.YELLOW : TextFormatting.RED)).getColor());
                 }
 
                 if (shouldRender("Hunger")) {
                     DecimalFormat df = new DecimalFormat("0.00");
-                    simpleStringDraw(matrix, font, new Translatable("hunger", null, player.getFoodStats().getFoodLevel(), df.format(player.getFoodStats().getSaturationLevel()))
+                    drawString(matrix, font, new Translatable("hunger", null, player.getFoodStats().getFoodLevel(), df.format(player.getFoodStats().getSaturationLevel()))
                             .getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), TextFormatting.GOLD.getColor());
                 }
 
                 if (shouldRender("Armor"))
-                    simpleStringDraw(matrix, font, new Translatable("armor", null, player.getTotalArmorValue()).getString(), 2, locator
+                    drawString(matrix, font, new Translatable("armor", null, player.getTotalArmorValue()).getString(), 2, locator
                             .getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), TextFormatting.GRAY.getColor());
             }
 
             if (shouldRender("Position"))
-                simpleStringDraw(matrix, font, new Translatable("pos", null, pos.getX(), pos.getY(), pos.getZ()).getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
+                drawString(matrix, font, new Translatable("pos", null, pos.getX(), pos.getY(), pos.getZ()).getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
 
             // Held items and equipments
             locator.begin(GUIElementLocator.LocatorTypes.LEFT_CENTER, mc);
@@ -92,7 +91,7 @@ public class EventHandler {
                     if (shouldRender("Equipment")) {
                         (Lists.reverse((List<ItemStack>) player.getArmorInventoryList())).forEach(stack -> {
                             if (!stack.isEmpty())
-                                getAllInfos(matrix, mc, stack, locator, true);
+                                getAllInfo(matrix, mc, stack, locator, true);
                         });
                         locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM);
                     }
@@ -100,7 +99,7 @@ public class EventHandler {
                         player.getHeldEquipment().forEach(stack -> {
                             if (stack.isEmpty())
                                 return;
-                            getAllInfos(matrix, mc, stack, locator, false);
+                            getAllInfo(matrix, mc, stack, locator, false);
                             locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM);
                         });
                     break;
@@ -109,7 +108,7 @@ public class EventHandler {
                         (Lists.reverse((List<ItemStack>) player.getArmorInventoryList())).forEach(stack -> {
                             if (stack.isEmpty())
                                 return;
-                            getAllInfos(matrix, mc, stack, locator, false);
+                            getAllInfo(matrix, mc, stack, locator, false);
                             locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM);
                         });
                         locator.returnCounter(1, GUIElementLocator.LocatorGapTypes.ITEM);
@@ -117,61 +116,120 @@ public class EventHandler {
                     if (shouldRender("HeldItems"))
                         player.getHeldEquipment().forEach(stack -> {
                             if (!stack.isEmpty())
-                                getAllInfos(matrix, mc, stack, locator, true);
+                                getAllInfo(matrix, mc, stack, locator, true);
                         });
                     break;
                 default:
-                    break;
+                    if (shouldRender("Equipment"))
+                        (Lists.reverse((List<ItemStack>) player.getArmorInventoryList())).forEach(stack -> {
+                            if (stack.isEmpty())
+                                return;
+                            getAllInfo(matrix, mc, stack, locator, true);
+                        });
+
+                    if (shouldRender("HeldItems"))
+                        player.getHeldEquipment().forEach(stack -> {
+                            if (!stack.isEmpty())
+                                getAllInfo(matrix, mc, stack, locator, true);
+                        });
             }
         }
         locator.end();
     }
 
-    private static void simpleStringDraw(MatrixStack matrix, FontRenderer font, String text, int x, int y, int color) {
-        font.drawStringWithShadow(matrix, text, x, y, color);
+    private static void drawString(MatrixStack matrix, FontRenderer font, String text, int x, int y, int color) {
+        font.drawStringWithShadow(
+                matrix,
+                text,
+                getComputedXbyString(font, x, text),
+                y,
+                color
+        );
     }
 
-    private static void simpleItemDraw(FontRenderer font, ItemRenderer renderer, ItemStack stack, int x, int y) {
-        renderer.renderItemAndEffectIntoGUI(stack, x, y);
-        renderer.renderItemOverlayIntoGUI(font, stack, x, y, null);
+    private static void drawItem(FontRenderer font, ItemRenderer renderer, ItemStack stack, int x, int y) {
+        renderer.renderItemAndEffectIntoGUI(
+                stack,
+                getComputedXbyItem(x),
+                y);
+        renderer.renderItemOverlayIntoGUI(
+                font,
+                stack,
+                getComputedXbyItem(x),
+                y,
+                null);
     }
 
-    private static void getAllInfos(MatrixStack matrix, Minecraft mc, ItemStack stack, GUIElementLocator locator, boolean simple) {
+    private static void getAllInfo(MatrixStack matrix, Minecraft mc, ItemStack stack, GUIElementLocator locator, boolean simple) {
         ItemRenderer renderer = mc.getItemRenderer();
         FontRenderer font = mc.fontRenderer;
         String s = stack.getTextComponent().getString().replaceAll("[\\[\\]]", "");
-        List<ITextComponent> texts = new ArrayList<>();
+        List<ITextComponent> texts = Lists.newArrayList();
         Item item = stack.getItem();
+
         if (simple) {
-            simpleItemDraw(font, renderer, stack, 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM));
-            simpleStringDraw(matrix, font, s, 20, locator.getCurrent(), stack.getRarity().color.getColor());
+            drawItem(font, renderer, stack, 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM));
+            drawString(matrix, font, s, 20, locator.getCurrent(), stack.getRarity().color.getColor());
             return;
         }
 
         int times = 0;
+
         if (stack.isDamageable())
             texts.add(new Translatable("durability", null, (stack.getMaxDamage() - stack.getDamage()), stack.getMaxDamage()).mergeStyle(getDurabilityFormat(stack)));
+
+        if (item.isFood()) {
+            Food food = item.getFood();
+            food.getEffects().forEach(p -> {
+                TextFormatting formatting;
+                switch (p.getFirst().getPotion().getEffectType()) {
+                    case BENEFICIAL:
+                        formatting = TextFormatting.BLUE;
+                        break;
+                    case NEUTRAL:
+                        formatting = TextFormatting.GRAY;
+                        break;
+                    case HARMFUL:
+                    default:
+                        formatting = TextFormatting.RED;
+                }
+                texts.add(new TranslationTextComponent(p.getFirst().getEffectName())
+                        .appendString(
+                                String.format(
+                                        "(%d:%02d)",
+                                        p.getFirst().getDuration() / 20 / 60,
+                                        p.getFirst().getDuration() / 20 % 60
+                                ))
+                        .mergeStyle(formatting));
+            });
+            texts.add(DisplayContentHelper.subContents[0].deepCopy().appendString(" : +" + food.getHealing()).mergeStyle(TextFormatting.GOLD));
+            texts.add(DisplayContentHelper.subContents[1].deepCopy().appendString(" : +" + food.getSaturation()).mergeStyle(TextFormatting.GOLD));
+        }
+
         if (stack.hasTag()) {
             CompoundNBT tag = stack.getTag();
             Block blk = Block.getBlockFromItem(item);
             if (stack.getEnchantmentTagList().size() > 0) {
-                Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
-                for (Map.Entry<Enchantment, Integer> ench : enchs.entrySet())
-                    texts.add(ench.getKey().getDisplayName(ench.getValue()).deepCopy().mergeStyle(ench.getKey().isCurse() ? TextFormatting.RED : (ench.getKey().getMaxLevel() == ench.getValue() ? TextFormatting.GOLD : TextFormatting.GREEN)));
+                EnchantmentHelper.getEnchantments(stack).entrySet().forEach(enchantment ->
+                        texts.add(enchantment.getKey().getDisplayName(enchantment.getValue())
+                                .deepCopy()
+                                .mergeStyle(
+                                        enchantment.getKey().isCurse() ? TextFormatting.RED :
+                                                (enchantment.getKey().getMaxLevel() == enchantment.getValue() ? TextFormatting.GOLD : TextFormatting.GREEN))));
             } else if (blk instanceof BeehiveBlock) {
-                int infos[] = {tag.getCompound("BlockStateTag").getInt("honey_level"), tag.getCompound("BlockEntityTag").getList("Bees", 10).size()};
-                texts.add(new Translatable("honeyLevel", null, infos[0]).mergeStyle(infos[0] == 5 ? TextFormatting.GOLD : TextFormatting.GREEN));
-                texts.add(new Translatable("bees", null, infos[1]).mergeStyle(infos[1] == 3 ? TextFormatting.GOLD : TextFormatting.GREEN));
+                int bees = tag.getCompound("BlockEntityTag").getList("Bees", 10).size();
+                // texts.add(new Translatable("honeyLevel", null, infos[0]).mergeStyle(infos[0] == 5 ? TextFormatting.GOLD : TextFormatting.GREEN)); <- NO LONGER SAVES BLOCKSTATE TAG IN AN ITEM, SO HONEY LEVEL IS NO LONGER AVAILABLE TO SCRAP.
+                texts.add(new Translatable("bees", null, bees).mergeStyle(bees == 3 ? TextFormatting.GOLD : TextFormatting.GREEN));
             } else if (blk instanceof ShulkerBoxBlock || blk instanceof ChestBlock || blk instanceof BarrelBlock || blk instanceof FurnaceBlock || blk instanceof SmokerBlock) {
                 ListNBT list = tag.getCompound("BlockEntityTag").getList("Items", 10);
-                simpleItemDraw(font, renderer, stack, 2, locator.getCurrent());
-                simpleStringDraw(matrix, font, s, 20, locator.getCurrent(), stack.getRarity().color.getColor());
+                drawItem(font, renderer, stack, 2, locator.getCurrent());
+                drawString(matrix, font, s, 20, locator.getCurrent(), stack.getRarity().color.getColor());
                 for (int i = 0, p = locator.getCurrent() + 20; i < list.size(); i++) {
                     if (i % 9 == 0 && i != 0) {
                         p += 20;
                         times++;
                     }
-                    simpleItemDraw(font, renderer, ItemStack.read((CompoundNBT) list.get(i)), 2 + (i % 9) * 20, p - 3);
+                    drawItem(font, renderer, ItemStack.read((CompoundNBT) list.get(i)), Config.CLIENT.renderType.get() == RenderLocationType.LEFT ? 2 + (i % 9) * 20 : 165 - (2 + (i % 9) * 20), p - 3);
                 }
                 for (int j = 0; j < times + 1; j++)
                     locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM);
@@ -194,22 +252,24 @@ public class EventHandler {
                             .mergeStyle(type == 8 ? TextFormatting.GREEN : (type == 9 ? TextFormatting.AQUA : TextFormatting.GOLD)));
                 }
             } else if (item instanceof EnchantedBookItem) {
-                Map<Enchantment, Integer> enchs = EnchantmentHelper.getEnchantments(stack);
-                for (Map.Entry<Enchantment, Integer> ench : enchs.entrySet())
-                    texts.add(ench.getKey().getDisplayName(ench.getValue()).deepCopy().mergeStyle(ench.getKey().getMaxLevel() == ench.getValue() ? TextFormatting.GOLD : TextFormatting.GREEN));
+                EnchantmentHelper.getEnchantments(stack).entrySet().forEach(enchantment ->
+                        texts.add(enchantment.getKey().getDisplayName(enchantment.getValue())
+                                .deepCopy()
+                                .mergeStyle(enchantment.getKey().getMaxLevel() == enchantment.getValue() ? TextFormatting.GOLD : TextFormatting.GREEN)));
             } else if (item instanceof PotionItem || item instanceof SpectralArrowItem || item instanceof TippedArrowItem) {
-                List<ITextComponent> tooltip = stack.getTooltip(mc.player, TooltipFlags.NORMAL);
-                tooltip.remove(2);
-                tooltip.remove(1);
-                texts.addAll(tooltip);
+//                List<ITextComponent> tooltip = stack.getTooltip(mc.player, TooltipFlags.NORMAL);
+//                tooltip.remove(2);
+//                tooltip.remove(1);
+//                texts.addAll(tooltip);
             }
         }
-        simpleItemDraw(font, renderer, stack, 2, locator.getCurrent());
-        simpleStringDraw(matrix, font, s, 20, locator.getCurrent(), stack.getRarity().color.getColor());
+
+        drawItem(font, renderer, stack, 2, locator.getCurrent());
+        drawString(matrix, font, s, 20, locator.getCurrent(), stack.getRarity().color.getColor());
         if (texts.isEmpty())
             return;
         locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT);
-        GuiUtils.drawHoveringText(matrix, texts, -7, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM) + 3, mc.getMainWindow().getWidth(), mc.getMainWindow().getHeight(), -1, font);
+        GuiUtils.drawHoveringText(matrix, texts, Config.CLIENT.renderType.get() == RenderLocationType.LEFT ? -7 : Minecraft.getInstance().getMainWindow().getScaledWidth() + 11, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM) + 3, mc.getMainWindow().getScaledWidth(), mc.getMainWindow().getScaledHeight(), -1, font);
         for (int i = 0; i < texts.size() - 2; i++)
             locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TOOLTIP_TEXT);
     }
@@ -231,7 +291,19 @@ public class EventHandler {
             return TextFormatting.GRAY;
     }
 
-    private boolean shouldRender(String s) {
+    private static boolean shouldRender(String s) {
         return Config.shouldRender(s);
+    }
+
+    private static RenderLocationType getRenderType() {
+        return Config.CLIENT.renderType.get();
+    }
+
+    private static int getComputedXbyString(FontRenderer font, int x, String text) {
+        return getRenderType() == RenderLocationType.LEFT ? x : Minecraft.getInstance().getMainWindow().getScaledWidth() - x - font.getStringWidth(text);
+    }
+
+    private static int getComputedXbyItem(int x) {
+        return getRenderType() == RenderLocationType.LEFT ? x : Minecraft.getInstance().getMainWindow().getScaledWidth() - x - 15;
     }
 }

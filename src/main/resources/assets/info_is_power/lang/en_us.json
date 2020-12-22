@@ -1,4 +1,5 @@
 {
+  "info_is_power.name": "Info Is Power!",
   "info_is_power.overlay.fps" : "FPS : %d",
   "info_is_power.overlay.biome" : "Biome : %s",
   "info_is_power.overlay.health" : "Health : %f",
@@ -10,5 +11,18 @@
   "info_is_power.overlay.bees" : "Bees : %d/3",
   "info_is_power.overlay.normalTotal" : "Has %d Markers",
   "info_is_power.overlay.explorerPos" : "Target Position(x , z) : %d , %d",
-  "info_is_power.overlay.durability" : "Durability : %d/%d"
+  "info_is_power.overlay.durability" : "Durability : %d/%d",
+  "info_is_power.config.openConfig": "Open Info Is Power's Config Tab",
+  "info_is_power.config.displayMode.screen": "Display Mode : ",
+  "info_is_power.config.renderMode.screen": "Render Mode : ",
+  "info_is_power.config.fps": "FPS",
+  "info_is_power.config.biome": "Biome",
+  "info_is_power.config.health": "Health",
+  "info_is_power.config.hungerSaturation": "Hunger & Saturation",
+  "info_is_power.config.hunger": "Hunger",
+  "info_is_power.config.saturation": "Saturation",
+  "info_is_power.config.armor": "Armor",
+  "info_is_power.config.pos": "Position",
+  "info_is_power.config.equipment": "Equipment",
+  "info_is_power.config.heldItem": "Held Item"
 }

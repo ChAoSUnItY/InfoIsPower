@@ -1,6 +1,6 @@
 package com.chaos.iip;
 
-import com.chaos.iip.utils.Translatable;
+import com.chaos.iip.utils.RenderLocationType;
 import com.google.common.collect.Lists;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.common.Mod;
@@ -15,17 +15,20 @@ public class Config {
         public static final List<String> acceptableRenderValues = Lists.newArrayList("FPS", "Biome", "Health", "Hunger", "Armor", "Position", "Equipment", "HeldItems");
 
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> renderModes;
+        public final ForgeConfigSpec.EnumValue<RenderLocationType> renderType;
         public final ForgeConfigSpec.IntValue mode;
 
         public Client(ForgeConfigSpec.Builder builder) {
             builder.comment("Info is Power Config").push(InfoIsPower.MODID);
 
             mode = builder.comment("This sets the detail mode. 1 is held items only, 2 is armor only, 3 is nondetailed mode.")
-                    .translation(new Translatable("mode", Translatable.TranslateType.CONFIG).getKey())
-                    .defineInRange("Mode", 1, 1, 3);
+                    .defineInRange("Display Mode", 1, 1, 3);
 
-            renderModes = builder.comment("This collection declares what info to render on left.\nAcceptable values: " + acceptableRenderValues.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")))
-                    .defineList("RenderList", acceptableRenderValues, acceptableRenderValues::contains);
+            renderModes = builder.comment("This collection declares what info will be rendered on left.\nAcceptable values: " + acceptableRenderValues.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")))
+                    .defineList("Display Filter", acceptableRenderValues, acceptableRenderValues::contains);
+
+            renderType = builder.comment("This enumeration defines where the info will be render.\nAcceptable Values: LEFT, RIGHT")
+                    .defineEnum("Render Type", RenderLocationType.LEFT);
 
             builder.pop();
         }

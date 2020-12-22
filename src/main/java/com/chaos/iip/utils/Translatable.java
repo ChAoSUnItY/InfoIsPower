@@ -17,7 +17,7 @@ public class Translatable extends TranslationTextComponent {
     }
 
     public enum TranslateType implements IStringSerializable {
-        OVERLAY(".overlay."), COMMAND(".command."), MISC(".misc."), CONFIG(".config.");
+        OVERLAY(".overlay."), COMMAND(".command."), MISC(".misc."), CONFIG(".config."), NONE("");
 
         private String s;
 

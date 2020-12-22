@@ -4,10 +4,10 @@ license="MIT"
 [[mods]]
 modId = "info_is_power"
 version = "${file.jarVersion}"
-displayName = "Info Is Power" #mandatory
-#displayURL="http://example.com/"
-#logoFile="com.chaos.iip.png"
+displayName = "Info Is Power!"
+displayURL="https://github.com/ChAoSUnItY/InfoIsPower"
+logoFile="logo.png"
 authors="ChAoS_UnItY"
 description = '''
-
+A simple HUD mod with several useful details.
 '''
