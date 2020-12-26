@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "info_is_power",
+  "version": "${version}",
+  "name": "Info Is Power!",
+  "description": "A simple HUD mod with several useful details.",
+  "authors": [
+    "ChAoS_UnItY"
+  ],
+  "contact": {
+    "repo": "https://github.com/ChAoSUnItY/InfoIsPower"
+  },
+  "license": "MIT",
+  "icon": "assets/com.chaos.iip/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.chaos.iip.InfoIsPower"
+    ]
+  },
+  "mixins": [
+    "com.chaos.iip.mixins.json"
+  ],
+  "accessWidener" : "iip.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.8.2",
+    "fabric": "*",
+    "minecraft": "1.16.x"
+  }
+}
