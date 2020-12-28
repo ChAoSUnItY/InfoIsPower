@@ -26,7 +26,7 @@ public class Config {
             mode = builder.comment("This sets the detail mode. 1 is held items only, 2 is armor only, 3 is nondetailed mode.")
                     .defineInRange("Display Mode", 1, 1, 3);
 
-            renderModes = builder.comment("This collection declares what info will be rendered on left.\nAcceptable values: " + acceptableRenderValues.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")))
+            renderModes = builder.comment("This collection declares what info will be rendered on screen.\nAcceptable values: " + acceptableRenderValues.stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(", ")))
                     .defineList("Display Filter", acceptableRenderValues, acceptableRenderValues::contains);
 
             renderType = builder.comment("This enumeration defines where the info will be render.\nAcceptable Values: LEFT, RIGHT")
