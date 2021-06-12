@@ -1,12 +1,7 @@
-package com.chaos.iip.utils;
+package io.github.chaosunity.iip.util;
 
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.MinecraftClient;
 
-/***
- * This class is a mess, I've warned you.
- * @author ChAoS
- *
- */
 public class GUIElementLocator {
     private static final GUIElementLocator INSTANCE = new GUIElementLocator();
     private int counter = 0;
@@ -18,7 +13,7 @@ public class GUIElementLocator {
         return INSTANCE;
     }
 
-    public GUIElementLocator begin(LocatorTypes type, Minecraft mc) {
+    public GUIElementLocator begin(LocatorTypes type, MinecraftClient mc) {
         this.reset();
         this.setPos(type, mc);
         return this;
@@ -28,8 +23,8 @@ public class GUIElementLocator {
         this.reset();
     }
 
-    private void setPos(LocatorTypes type, Minecraft mc) {
-        int h = mc.getMainWindow().getHeight();
+    private void setPos(LocatorTypes type, MinecraftClient mc) {
+        int h = mc.getWindow().getHeight();
         switch (type) {
             case LEFT_UP:
                 this.counter = 4;

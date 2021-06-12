@@ -1,1 +1,13 @@
+pluginManagement {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'com.chaos.iip'
+include 'fabric-1.17'
+findProject(':fabric-1.17')?.name = 'InfoIsPower-fabric-1.17'

@@ -1,9 +1,6 @@
-package com.chaos.iip.utils;
-
-import net.minecraft.util.text.ITextComponent;
+package io.github.chaosunity.iip.util;
 
 public class DisplayContentHelper {
-    // array size should be as long as config's array size.
     public static final Translatable[] contents = new Translatable[] {
             createTranslatable("fps"),
             createTranslatable("biome"),
