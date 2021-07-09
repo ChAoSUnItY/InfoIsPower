@@ -8,18 +8,18 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Util;
+import net.minecraft.util.math.BlockPos;
 
 import java.text.DecimalFormat;
 import java.util.List;
 
-@SuppressWarnings("all")
 public class ClientRenderHandler {
     public static final ClientRenderHandler INSTANCE = new ClientRenderHandler();
     public final int color = Formatting.WHITE.getColorValue();
@@ -28,12 +28,12 @@ public class ClientRenderHandler {
         if (!InfoIsPower.config.enableRender)
             return;
 
-        var mc = MinecraftClient.getInstance();
-        var world = mc.getNetworkHandler().getWorld();
-        var tr = mc.textRenderer;
-        var locator = GUIElementLocator.getInstance();
-        var player = mc.player;
-        var pos = player.getBlockPos();
+        MinecraftClient mc = MinecraftClient.getInstance();
+//      World world = mc.getNetworkHandler().getWorld();
+        TextRenderer tr = mc.textRenderer;
+        GUIElementLocator locator = GUIElementLocator.getInstance();
+        PlayerEntity player = mc.player;
+        BlockPos pos = player.getBlockPos();
 
         // Main Render
         if (!mc.options.debugEnabled) {
@@ -41,19 +41,20 @@ public class ClientRenderHandler {
             if (shouldRender(0))
                 drawString(matrix, tr, new Translatable("fps", null, MinecraftClient.currentFps).getString(), 2, locator.begin(GUIElementLocator.LocatorTypes.LEFT_UP, mc).getCurrent(), color);
 
-            if (shouldRender(1))
-                drawString(matrix, tr, new Translatable("biome", null, new TranslatableText(Util.createTranslationKey("biome", world.getBiomeKey(pos).get().getValue())).getString()).asString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
+//            if (shouldRender("Biome"))
+//                drawString(matrix, tr, new Translatable("biome", null, new TranslatableText(Util.createTranslationKey("biome", Registry.BIOME_KEY.getValue())).getString(), 2, locator
+//                        .getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), color);
 
             // Survival mode only stats, like health, hunger, and armor
             if (!player.isCreative()) {
                 if (shouldRender(2)) {
-                    var df = new DecimalFormat("0.00");
+                    DecimalFormat df = new DecimalFormat("0.00");
                     drawString(matrix, tr, new Translatable("health", null, df.format(player.getHealth())).append(" / " + player.getMaxHealth())
                             .getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), (player.getHealth() > 10.0 ? Formatting.GREEN : (player.getHealth() > 5.0 ? Formatting.YELLOW : Formatting.RED)).getColorValue());
                 }
 
                 if (shouldRender(3)) {
-                    var df = new DecimalFormat("0.00");
+                    DecimalFormat df = new DecimalFormat("0.00");
                     drawString(matrix, tr, new Translatable("hunger", null, player.getHungerManager().getFoodLevel(), df.format(player.getHungerManager().getSaturationLevel()))
                             .getString(), 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT), Formatting.GOLD.getColorValue());
                 }
@@ -143,11 +144,11 @@ public class ClientRenderHandler {
     }
 
     private void getAllInfo(MatrixStack matrix, MinecraftClient mc, ItemStack stack, GUIElementLocator locator, boolean simple) {
-        var renderer = mc.getItemRenderer();
-        var font = mc.textRenderer;
-        var s = stack.getName().getString().replaceAll("[\\[\\]]", "");
-        var texts = Lists.<Text>newArrayList();
-        var item = stack.getItem();
+        ItemRenderer renderer = mc.getItemRenderer();
+        TextRenderer font = mc.textRenderer;
+        String s = stack.getName().getString().replaceAll("[\\[\\]]", "");
+        List<Text> texts = Lists.newArrayList();
+        Item item = stack.getItem();
 
         if (simple) {
             drawItem(font, renderer, stack, 2, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM));
@@ -155,38 +156,42 @@ public class ClientRenderHandler {
             return;
         }
 
-        var times = 0;
+        int times = 0;
 
         if (stack.isDamageable())
             texts.add(new Translatable("durability", null, (stack.getMaxDamage() - stack.getDamage()), stack.getMaxDamage()).formatted(getDurabilityFormat(stack)));
 
         if (item.isFood()) {
-            var food = item.getFoodComponent();
-            if (food != null) {
-                food.getStatusEffects().forEach(p -> {
-                    var formatting = switch (p.getFirst().getEffectType().getType()) {
-                        case BENEFICIAL -> Formatting.BLUE;
-                        case NEUTRAL -> Formatting.GRAY;
-                        default -> Formatting.RED;
-                    };
-                    texts.add(new TranslatableText(p.getFirst().getTranslationKey())
-                            .append(
-                                    String.format(
-                                            "(%d:%02d)",
-                                            p.getFirst().getDuration() / 20 / 60,
-                                            p.getFirst().getDuration() / 20 % 60
-                                    ))
-                            .formatted(formatting));
-                });
-                texts.add(DisplayContentHelper.subContents[0].shallowCopy().append(" : +" + food.getHunger()).formatted(Formatting.GOLD));
-                texts.add(DisplayContentHelper.subContents[1].shallowCopy().append(" : +" + food.getSaturationModifier()).formatted(Formatting.GOLD));
-            }
+            FoodComponent food = item.getFoodComponent();
+            food.getStatusEffects().forEach(p -> {
+                Formatting formatting;
+                switch (p.getFirst().getEffectType().getType()) {
+                    case BENEFICIAL:
+                        formatting = Formatting.BLUE;
+                        break;
+                    case NEUTRAL:
+                        formatting = Formatting.GRAY;
+                        break;
+                    case HARMFUL:
+                    default:
+                        formatting = Formatting.RED;
+                }
+                texts.add(new TranslatableText(p.getFirst().getTranslationKey())
+                        .append(
+                                String.format(
+                                        "(%d:%02d)",
+                                        p.getFirst().getDuration() / 20 / 60,
+                                        p.getFirst().getDuration() / 20 % 60
+                                ))
+                        .formatted(formatting));
+            });
+            texts.add(DisplayContentHelper.subContents[0].shallowCopy().append(" : +" + food.getHunger()).formatted(Formatting.GOLD));
+            texts.add(DisplayContentHelper.subContents[1].shallowCopy().append(" : +" + food.getSaturationModifier()).formatted(Formatting.GOLD));
         }
 
         if (stack.hasTag()) {
-            var tag = stack.getTag();
-            var blk = Block.getBlockFromItem(item);
-
+            NbtCompound tag = stack.getTag();
+            Block blk = Block.getBlockFromItem(item);
             if (stack.getEnchantments().size() > 0) {
                 EnchantmentHelper.get(stack).forEach((key, value) ->
                         texts.add(key.getName(value)
@@ -194,10 +199,11 @@ public class ClientRenderHandler {
                                 .formatted(
                                         key.isCursed() ? Formatting.RED :
                                                 (key.getMaxLevel() == value ? Formatting.GOLD : Formatting.GREEN))));
-            } else if (blk instanceof BeehiveBlock && tag != null) {
-                    var bees = tag.getCompound("BlockEntityTag").getList("Bees", 10).size();
-                    texts.add(new Translatable("bees", null, bees).formatted(bees == 3 ? Formatting.GOLD : Formatting.GREEN));
-            } else if ((blk instanceof ShulkerBoxBlock || blk instanceof ChestBlock || blk instanceof BarrelBlock || blk instanceof FurnaceBlock || blk instanceof SmokerBlock) && tag != null) {
+            } else if (blk instanceof BeehiveBlock) {
+                int bees = tag.getCompound("BlockEntityTag").getList("Bees", 10).size();
+                // texts.add(new Translatable("honeyLevel", null, infos[0]).mergeStyle(infos[0] == 5 ? TextFormatting.GOLD : TextFormatting.GREEN)); <- NO LONGER SAVES BLOCKSTATE TAG IN AN ITEM, SO HONEY LEVEL IS NO LONGER AVAILABLE TO SCRAP.
+                texts.add(new Translatable("bees", null, bees).formatted(bees == 3 ? Formatting.GOLD : Formatting.GREEN));
+            } else if (blk instanceof ShulkerBoxBlock || blk instanceof ChestBlock || blk instanceof BarrelBlock || blk instanceof FurnaceBlock || blk instanceof SmokerBlock) {
                 NbtList list = tag.getCompound("BlockEntityTag").getList("Items", 10);
                 drawItem(font, renderer, stack, 2, locator.getCurrent());
                 drawString(matrix, font, s, 20, locator.getCurrent(), stack.getRarity().formatting.getColorValue());
@@ -245,7 +251,7 @@ public class ClientRenderHandler {
         if (texts.isEmpty())
             return;
         locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TEXT);
-        HudHelper.renderTooltip(matrix, texts.stream().map(Text::asOrderedText).toList(), InfoIsPower.config.renderType == RenderType.LEFT ? -7 : mc.getWindow().getScaledWidth() + 11, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM) + 3);
+        mc.currentScreen.renderTooltip(matrix, texts, InfoIsPower.config.renderType == RenderType.LEFT ? -7 : mc.getWindow().getScaledWidth() + 11, locator.getNextLocation(GUIElementLocator.LocatorGapTypes.ITEM) + 3);
         for (int i = 0; i < texts.size() - 2; i++)
             locator.getNextLocation(GUIElementLocator.LocatorGapTypes.TOOLTIP_TEXT);
     }

@@ -1,7 +1,6 @@
 package io.github.chaosunity.iip.mixin;
 
 import io.github.chaosunity.iip.ClientRenderHandler;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinGameRenderer {
     @Inject(method = "render", slice = @Slice(from = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/hud/InGameHud;render(Lnet/minecraft/client/util/math/MatrixStack;F)V")), at = @At(value = "INVOKE", ordinal = 0))
     private void renderOverlay(float var1, long nanoTime, boolean var4, CallbackInfo callbackInfo) {
-        var mc = MinecraftClient.getInstance();
         ClientRenderHandler.INSTANCE.render(new MatrixStack());
     }
 }

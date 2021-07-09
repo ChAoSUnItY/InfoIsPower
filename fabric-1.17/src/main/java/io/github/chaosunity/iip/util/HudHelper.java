@@ -2,35 +2,35 @@ package io.github.chaosunity.iip.util;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.render.*;
-import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
-import net.minecraft.util.math.Matrix4f;
 
 import java.util.List;
 
-public class GuiUtils extends DrawableHelper {
+import static net.minecraft.client.gui.DrawableHelper.fillGradient;
+
+public class HudHelper {
     public static void renderTooltip(MatrixStack matrices, List<? extends OrderedText> lines, int x, int y) {
-        MinecraftClient mc = MinecraftClient.getInstance();
-        Window window = mc.getWindow();
-        TextRenderer tr = mc.textRenderer;
+        var mc = MinecraftClient.getInstance();
+        var window = mc.getWindow();
+        var tr = mc.textRenderer;
         int width = window.getScaledWidth(), height = window.getScaledHeight();
 
         if (!lines.isEmpty()) {
-            int i = 0;
+            var i = 0;
 
             for (OrderedText orderedText : lines) {
-                int j = tr.getWidth(orderedText);
+                var j = tr.getWidth(orderedText);
+
                 if (j > i)
                     i = j;
             }
 
-            int k = x + 12;
-            int l = y - 12;
-            int n = 8;
+            var k = x + 12;
+            var l = y - 12;
+            var n = 8;
+
             if (lines.size() > 1)
                 n += 2 + (lines.size() - 1) * 10;
 
@@ -41,10 +41,10 @@ public class GuiUtils extends DrawableHelper {
                 l = height - n - 6;
 
             matrices.push();
-            Tessellator tessellator = Tessellator.getInstance();
-            BufferBuilder bufferBuilder = tessellator.getBuffer();
+            var tessellator = Tessellator.getInstance();
+            var bufferBuilder = tessellator.getBuffer();
             bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-            Matrix4f matrix4f = matrices.peek().getModel();
+            var matrix4f = matrices.peek().getModel();
             fillGradient(matrix4f, bufferBuilder, k - 3, l - 4, k + i + 3, l - 3, 400, -267386864, -267386864);
             fillGradient(matrix4f, bufferBuilder, k - 3, l + n + 3, k + i + 3, l + n + 4, 400, -267386864, -267386864);
             fillGradient(matrix4f, bufferBuilder, k - 3, l - 3, k + i + 3, l + n + 3, 400, -267386864, -267386864);
@@ -62,13 +62,14 @@ public class GuiUtils extends DrawableHelper {
             BufferRenderer.draw(bufferBuilder);
             RenderSystem.disableBlend();
             RenderSystem.enableTexture();
-            VertexConsumerProvider.Immediate immediate = VertexConsumerProvider.immediate(Tessellator.getInstance().getBuffer());
+            var immediate = VertexConsumerProvider.immediate(Tessellator.getInstance().getBuffer());
             matrices.translate(0.0D, 0.0D, 400.0D);
 
-            for(int s = 0; s < lines.size(); ++s) {
-                OrderedText orderedText2 = lines.get(s);
+            for (int s = 0; s < lines.size(); ++s) {
+                var orderedText2 = lines.get(s);
+
                 if (orderedText2 != null)
-                    tr.draw(orderedText2, (float)k, (float)l, -1, true, matrix4f, immediate, false, 0, 15728880);
+                    tr.draw(orderedText2, (float) k, (float) l, -1, true, matrix4f, immediate, false, 0, 15728880);
 
                 if (s == 0)
                     l += 2;

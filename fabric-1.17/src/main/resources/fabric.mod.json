@@ -15,6 +15,9 @@
   "entrypoints": {
     "client": [
       "io.github.chaosunity.iip.InfoIsPower"
+    ],
+    "modmenu": [
+      "io.github.chaosunity.iip.api.ModMenuImpl"
     ]
   },
   "mixins": [
@@ -24,6 +27,6 @@
   "depends": {
     "fabricloader": ">=0.8.2",
     "fabric": "*",
-    "minecraft": "1.17.x"
+    "minecraft": ">=1.17-"
   }
 }
